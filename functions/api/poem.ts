@@ -1,7 +1,3 @@
-interface Env {
-  POEM_KV: KVNamespace;
-}
-
 const FALLBACK_POEMS = [
   { content: "明月几时有，把酒问青天。", author: "苏轼", title: "水调歌头", dynasty: "宋" },
   { content: "大江东去，浪淘尽，千古风流人物。", author: "苏轼", title: "念奴娇", dynasty: "宋" },
@@ -13,56 +9,25 @@ const FALLBACK_POEMS = [
   { content: "夕阳无限好，只是近黄昏。", author: "李商隐", title: "乐游原", dynasty: "唐" },
 ];
 
-export async function onRequestGet(context: { env: Env }): Promise<Response> {
+export async function onRequestGet(): Promise<Response> {
   try {
-    const { POEM_KV } = context.env;
-    const hour = new Date().getHours();
-    const cacheKey = `poem:${hour}`;
-
-    if (POEM_KV) {
-      const cached = await POEM_KV.get(cacheKey);
-      if (cached) {
-        return new Response(cached, {
-          headers: { "Content-Type": "application/json", "Cache-Control": "public, max-age=3600" },
-        });
-      }
-    }
-
     const response = await fetch("https://api.jinrishici.com/v1/random");
-    let poem;
-
     if (response.ok) {
       const data = await response.json();
-      poem = {
+      const poem = {
         content: data.data.content,
         author: data.data.author,
         title: data.data.origin,
-        dynasty: data.data.dynasty,
       };
-    } else {
-      poem = FALLBACK_POEMS[Math.floor(Math.random() * FALLBACK_POEMS.length)];
+      return new Response(JSON.stringify({ success: true, data: poem }), {
+        headers: { "Content-Type": "application/json" },
+      });
     }
-
-    const result = JSON.stringify({
-      success: true,
-      data: poem,
-    });
-
-    if (POEM_KV) {
-      await POEM_KV.put(cacheKey, result, { expirationTtl: 3600 });
-    }
-
-    return new Response(result, {
-      headers: { "Content-Type": "application/json", "Cache-Control": "public, max-age=3600" },
-    });
+    throw new Error("API failed");
   } catch (error) {
-    console.error("Poem API error:", error);
-    return new Response(
-      JSON.stringify({
-        success: true,
-        data: FALLBACK_POEMS[Math.floor(Math.random() * FALLBACK_POEMS.length)],
-      }),
-      { headers: { "Content-Type": "application/json" } }
-    );
+    const poem = FALLBACK_POEMS[Math.floor(Math.random() * FALLBACK_POEMS.length)];
+    return new Response(JSON.stringify({ success: true, data: poem }), {
+      headers: { "Content-Type": "application/json" },
+    });
   }
 }
