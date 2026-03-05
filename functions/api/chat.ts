@@ -1,4 +1,4 @@
-import { callMiniMax, buildSystemPrompt, MiniMaxMessage } from "../ai/minimax";
+import { callMiniMax, buildSystemPrompt, MiniMaxMessage } from "./minimax";
 
 interface Env {
   MINIMAX_API_KEY: string;

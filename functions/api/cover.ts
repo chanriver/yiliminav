@@ -1,4 +1,4 @@
-import { callMiniMax, MiniMaxMessage } from "../ai/minimax";
+import { callMiniMax, MiniMaxMessage } from "./minimax";
 
 interface Env {
   MINIMAX_API_KEY: string;
