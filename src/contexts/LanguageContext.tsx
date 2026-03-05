@@ -286,9 +286,9 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguage] = useState<Language>(() => {
-    if (typeof window === "undefined") return "en";
+    if (typeof window === "undefined") return "zh";
     const savedLang = localStorage.getItem("modernNavLanguage") as Language;
-    return savedLang === "en" || savedLang === "zh" ? savedLang : "en";
+    return savedLang === "en" || savedLang === "zh" ? savedLang : "zh";
   });
 
   const handleSetLanguage = (lang: Language) => {

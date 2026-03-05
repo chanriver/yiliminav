@@ -1,14 +1,19 @@
 import { useState, useEffect, useCallback } from "react";
 import { BookOpen, RefreshCw, Copy, Check } from "lucide-react";
 import { ThemeMode } from "../types";
-import { usePoem } from "../hooks/useSWR";
+
+interface PoemData {
+  content: string;
+  author: string;
+  title: string;
+}
 
 interface PoemWidgetProps {
   themeMode: ThemeMode;
   isZenMode?: boolean;
 }
 
-const FALLBACK_POEMS = [
+const FALLBACK_POEMS: PoemData[] = [
   { content: "明月几时有，把酒问青天。", author: "苏轼", title: "水调歌头" },
   { content: "大江东去，浪淘尽，千古风流人物。", author: "苏轼", title: "念奴娇" },
   { content: "人生若只如初见，何事秋风悲画扇。", author: "纳兰性德", title: "木兰花" },
@@ -20,25 +25,49 @@ const FALLBACK_POEMS = [
 ];
 
 export const PoemWidget: React.FC<PoemWidgetProps> = ({ themeMode, isZenMode }) => {
-  const { poem, isLoading, mutate } = usePoem();
+  const [poem, setPoem] = useState<PoemData | null>(null);
   const [displayedText, setDisplayedText] = useState("");
+  const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [showFull, setShowFull] = useState(false);
 
   const isDark = themeMode === ThemeMode.Dark;
 
-  const fetchPoem = useCallback(() => {
+  const fetchPoem = useCallback(async () => {
+    setLoading(true);
     setDisplayedText("");
     setShowFull(false);
-    mutate();
-  }, [mutate]);
-
-  const displayPoem = poem || FALLBACK_POEMS[Math.floor(Math.random() * FALLBACK_POEMS.length)];
+    try {
+      const response = await fetch("/api/poem");
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data) {
+          setPoem(data.data);
+        } else {
+          throw new Error("Invalid response");
+        }
+      } else {
+        throw new Error("API error");
+      }
+    } catch (err) {
+      console.error("Poem fetch error:", err);
+      const randomPoem = FALLBACK_POEMS[Math.floor(Math.random() * FALLBACK_POEMS.length)];
+      setPoem(randomPoem);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    if (!displayPoem) return;
+    fetchPoem();
+    const interval = setInterval(fetchPoem, 20000);
+    return () => clearInterval(interval);
+  }, [fetchPoem]);
 
-    const text = displayPoem.content;
+  useEffect(() => {
+    if (!poem || loading) return;
+
+    const text = poem.content;
     let index = 0;
     const timer = setInterval(() => {
       if (index < text.length) {
@@ -51,11 +80,11 @@ export const PoemWidget: React.FC<PoemWidgetProps> = ({ themeMode, isZenMode }) 
     }, 80);
 
     return () => clearInterval(timer);
-  }, [displayPoem]);
+  }, [poem, loading]);
 
   const handleCopy = async () => {
-    if (!displayPoem) return;
-    const text = `${displayPoem.content}\n— ${displayPoem.author}《${displayPoem.title}》`;
+    if (!poem) return;
+    const text = `${poem.content}\n— ${poem.author}《${poem.title}》`;
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
@@ -83,12 +112,12 @@ export const PoemWidget: React.FC<PoemWidgetProps> = ({ themeMode, isZenMode }) 
           </div>
           <button
             onClick={fetchPoem}
-            disabled={isLoading}
+            disabled={loading}
             className={`p-1 rounded transition-all duration-300 ${
               isDark
                 ? "hover:bg-white/10 text-white/40 hover:text-white/70"
                 : "hover:bg-black/10 text-slate-400 hover:text-slate-600"
-            } ${isLoading ? "animate-spin" : ""}`}
+            } ${loading ? "animate-spin" : ""}`}
             title="换一首"
           >
             <RefreshCw size={14} />
@@ -96,7 +125,7 @@ export const PoemWidget: React.FC<PoemWidgetProps> = ({ themeMode, isZenMode }) 
         </div>
 
         <div className="min-h-[80px]">
-          {isLoading ? (
+          {loading ? (
             <div className="space-y-2">
               <div
                 className={`h-4 rounded animate-pulse ${
@@ -117,7 +146,7 @@ export const PoemWidget: React.FC<PoemWidgetProps> = ({ themeMode, isZenMode }) 
                 style={{ width: "50%" }}
               />
             </div>
-          ) : (
+          ) : poem ? (
             <>
               <p
                 className={`text-sm leading-relaxed ${
@@ -133,11 +162,11 @@ export const PoemWidget: React.FC<PoemWidgetProps> = ({ themeMode, isZenMode }) 
                     isDark ? "text-white/40" : "text-slate-400"
                   }`}
                 >
-                  — {displayPoem.author}《{displayPoem.title}》
+                  — {poem.author}《{poem.title}》
                 </p>
               )}
             </>
-          )}
+          ) : null}
         </div>
 
         {showFull && (
