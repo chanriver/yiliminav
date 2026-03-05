@@ -1,0 +1,246 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom Scrollbar for Webkit */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+/* Thin Scrollbar for smaller areas like Icon Picker */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Hide Scrollbar Utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+body {
+  background-color: #0f172a;
+  color: white;
+}
+
+/* Theme-based shadow classes */
+.shadow-themed {
+  box-shadow: 0 0 15px var(--theme-primary);
+}
+
+.shadow-themed-light {
+  box-shadow: 0 0 10px var(--theme-primary);
+}
+
+/*
+   CORE GLASSMORPHISM VARIABLES
+   Optimized for macOS aesthetic
+*/
+.glass-noise {
+  position: relative;
+  /* Ensure proper stacking context for mix-blend-mode */
+  isolation: isolate;
+}
+.glass-noise::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1; /* Place above background color */
+  opacity: 0.04; /* Very subtle */
+  pointer-events: none;
+  background-image: url("../public/noise-texture.svg");
+  border-radius: inherit;
+  mix-blend-mode: overlay;
+}
+
+/*
+   APPLE AESTHETIC GLASS (macOS/iOS Style)
+   Used for Dropdowns and Floating Menus
+*/
+
+/* Staggered Card Entry Animation (New) */
+@keyframes card-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in-down {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-card-enter {
+  animation: card-enter 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out;
+}
+
+.animate-fade-in-down {
+  animation: fade-in-down 0.5s ease-out;
+}
+
+/* Gradient Animation */
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-gradient {
+  animation: gradient 15s ease infinite;
+}
+
+/* Utility for text truncation lines */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Dark Mode Apple Glass - Floating Menus */
+.apple-glass-dark {
+  background-color: rgba(30, 41, 59, 0.85);
+  backdrop-filter: blur(40px) saturate(200%);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 20px 40px -10px rgba(0, 0, 0, 0.5);
+  transform: translateZ(0);
+  isolation: isolate;
+}
+
+/* Light Mode Apple Glass - Floating Menus */
+.apple-glass-light {
+  background-color: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.5),
+    0 10px 30px -5px rgba(0, 0, 0, 0.1);
+  transform: translateZ(0);
+  isolation: isolate;
+}
+
+/* Dark Mode Apple Glass - Without Isolation */
+.apple-glass-dark-no-isolation {
+  background-color: rgba(30, 41, 59, 0.85);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 20px 40px -10px rgba(0, 0, 0, 0.5);
+  transform: translateZ(0);
+}
+
+/* Light Mode Apple Glass - Without Isolation */
+.apple-glass-light-no-isolation {
+  background-color: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.5),
+    0 10px 30px -5px rgba(0, 0, 0, 0.1);
+  transform: translateZ(0);
+}
+
+/* Responsive Grid Utility */
+.responsive-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--grid-cols, 2), minmax(0, 1fr));
+}
+
+@layer components {
+  .input-primary {
+    @apply w-full bg-slate-900/50 border border-white/[0.1] rounded-lg px-3 py-2 text-white placeholder-slate-600 outline-none transition-colors duration-200 text-sm;
+  }
+  .input-primary:focus {
+    border-color: var(--theme-primary);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--theme-primary), transparent 50%);
+  }
+
+  /* --- Buttons --- */
+  .btn-primary {
+    @apply bg-[var(--theme-primary)] hover:bg-[var(--theme-hover)] text-white px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all active:scale-[0.98] flex items-center justify-center gap-2;
+    box-shadow:
+      0 10px 15px -3px color-mix(in srgb, var(--theme-primary), transparent 80%),
+      0 4px 6px -4px color-mix(in srgb, var(--theme-primary), transparent 80%);
+  }
+
+  .btn-secondary {
+    @apply bg-white/5 hover:bg-white/10 text-slate-300 border border-white/5 px-4 py-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-2;
+  }
+
+  .btn-icon {
+    @apply p-2 text-slate-500 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg transition-colors border border-transparent;
+  }
+
+  /* --- Panels & Cards --- */
+  .panel-base {
+    @apply bg-slate-800/40 p-4 rounded-xl border border-white/[0.08];
+  }
+
+  /* --- Typography --- */
+  .label-xs {
+    @apply block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5;
+  }
+
+  .tab-pill {
+    @apply px-4 py-1.5 rounded-md text-xs font-medium transition-all flex items-center;
+  }
+  .tab-pill-active {
+    @apply bg-[var(--theme-primary)] text-white shadow-md;
+  }
+  .tab-pill-inactive {
+    @apply text-slate-400 hover:text-white hover:bg-white/5;
+  }
+}

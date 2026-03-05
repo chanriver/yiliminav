@@ -1,0 +1,308 @@
+import React, { useState, useEffect, Suspense, lazy } from "react";
+import { FolderOpen } from "lucide-react";
+import { SmartIcon } from "./components/SmartIcon";
+import { SearchBar } from "./components/SearchBar";
+import { GlassCard } from "./components/GlassCard";
+import { LinkManagerModal } from "./components/LinkManagerModal";
+import { ToastContainer } from "./components/Toast";
+import { SyncIndicator } from "./components/SyncIndicator";
+import { BackgroundLayer } from "./components/BackgroundLayer";
+import { CategoryNav } from "./components/CategoryNav";
+import { Footer } from "./components/Footer";
+import { SkeletonLoader } from "./components/SkeletonLoader";
+import { QuoteCard } from "./components/QuoteCard";
+import { Motto } from "./components/Motto";
+import { DrawerNav } from "./components/DrawerNav";
+import { BottomNav } from "./components/BottomNav";
+import { useDashboardLogic } from "./hooks/useDashboardLogic";
+import { useResponsiveColumns } from "./hooks/useResponsiveColumns";
+import { useLanguage } from "./contexts/LanguageContext";
+import { ThemeMode } from "./types";
+import { getFaviconUrl } from "./utils/favicon";
+
+const ClockWidget = lazy(() => import("./components/ClockWidget").then(m => ({ default: m.ClockWidget })));
+const PoemWidget = lazy(() => import("./components/PoemWidget").then(m => ({ default: m.PoemWidget })));
+const AIAssistant = lazy(() => import("./components/AIAssistant").then(m => ({ default: m.AIAssistant })));
+
+const LoadingFallback = null;
+
+type MobileTab = "home" | "search" | "categories" | "settings";
+
+const App: React.FC = () => {
+  const { state, actions } = useDashboardLogic();
+  const {
+    loading,
+    categories,
+    background,
+    cardOpacity,
+    themeColor,
+    themeColorAuto,
+    themeMode,
+    isDefaultCode,
+    activeCategory,
+    activeSubCategoryId,
+    maxContainerWidth,
+    cardWidth,
+    cardHeight,
+    gridColumns,
+    siteTitle,
+    faviconApi,
+    footerGithub,
+    footerLinks,
+  } = state;
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isZenMode, setIsZenMode] = useState(false);
+  const [mobileTab, setMobileTab] = useState<MobileTab>("home");
+  const { t } = useLanguage();
+
+  // Dynamic Column Calculation
+  const effectiveColumns = useResponsiveColumns(gridColumns, maxContainerWidth, cardWidth);
+
+  useEffect(() => {
+    document.title = siteTitle || "ModernNav";
+  }, [siteTitle]);
+
+  if (loading) {
+    return (
+      <div
+        className={`min-h-screen relative flex flex-col items-center pt-8 md:pt-12 px-4 ${
+          themeMode === ThemeMode.Dark ? "bg-slate-900" : "bg-slate-50"
+        }`}
+      >
+        <BackgroundLayer background={background} isDark={themeMode === ThemeMode.Dark} />
+        <div className="w-full max-w-[1000px] relative z-10">
+          <SkeletonLoader
+            cardOpacity={cardOpacity}
+            themeMode={themeMode}
+            maxContainerWidth={maxContainerWidth}
+            cardWidth={cardWidth}
+            cardHeight={cardHeight}
+            gridColumns={effectiveColumns} // Use effective columns for Skeleton
+          />
+        </div>
+      </div>
+    );
+  }
+
+  const isDark = themeMode === ThemeMode.Dark;
+  const adaptiveGlassBlur = isDark ? 50 : 30;
+
+  const visibleCategory = categories.find((c) => c.id === activeCategory);
+  const visibleSubCategory = visibleCategory?.subCategories.find(
+    (s) => s.id === activeSubCategoryId
+  );
+
+  return (
+    <div
+      className={`min-h-screen relative overflow-x-hidden selection:bg-[var(--theme-primary)] selection:text-white font-sans flex flex-col ${
+        isDark ? "text-slate-100" : "text-slate-800"
+      }`}
+    >
+      <ToastContainer />
+
+      <style>{`
+        :root {
+          --theme-primary: ${themeColor};
+          --theme-hover: color-mix(in srgb, ${themeColor}, black 10%);
+          --theme-active: color-mix(in srgb, ${themeColor}, black 20%);
+          --theme-light: color-mix(in srgb, ${themeColor}, white 30%);
+          --glass-blur: ${adaptiveGlassBlur}px;
+          --grid-cols: ${effectiveColumns}; /* Bind effective columns to CSS var */
+        }
+      `}</style>
+
+      {/* Background Layer */}
+      <BackgroundLayer background={background} isDark={isDark} />
+
+      {/* Mobile Drawer Navigation */}
+      <Suspense fallback={LoadingFallback}>
+        <DrawerNav
+          themeMode={themeMode}
+          categories={categories}
+          activeCategory={activeCategory}
+          activeSubCategoryId={activeSubCategoryId}
+          onCategoryClick={(id) => actions.handleMainCategoryClick(id as any)}
+          onSubCategoryClick={(cid, sid) => actions.handleSubCategoryClick(cid, sid)}
+          toggleTheme={actions.toggleTheme}
+          toggleLanguage={actions.toggleLanguage}
+          openSettings={() => setIsModalOpen(true)}
+          isZenMode={isZenMode}
+        />
+      </Suspense>
+
+      {/* Desktop Navigation - Dynamic Island */}
+      <div className="hidden lg:block">
+        <CategoryNav
+          categories={categories}
+          activeCategory={activeCategory}
+          activeSubCategoryId={activeSubCategoryId}
+          onCategoryClick={actions.handleMainCategoryClick}
+          onSubCategoryClick={actions.handleSubCategoryClick}
+          themeMode={themeMode}
+          toggleTheme={actions.toggleTheme}
+          toggleLanguage={actions.toggleLanguage}
+          openSettings={() => setIsModalOpen(true)}
+        />
+      </div>
+
+      <div
+        className="container mx-auto px-4 flex-1 flex flex-col items-center pt-20 md:pt-12 relative z-[10] pb-24 lg:pb-20"
+        style={{ maxWidth: `${maxContainerWidth}px` }}
+      >
+        <section className="w-full mb-14 animate-fade-in-down relative z-[70] isolation-isolate">
+          <SearchBar themeMode={themeMode} faviconApi={faviconApi} />
+          <QuoteCard themeMode={themeMode} />
+        </section>
+
+        <main className="w-full pb-20 relative z-[10] space-y-8">
+          {visibleSubCategory ? (
+            <div key={visibleSubCategory.id} className="">
+              <div className="flex items-center gap-4 mb-6">
+                <div
+                  className={`h-[1px] flex-1 bg-gradient-to-r from-transparent ${
+                    isDark ? "to-white/20" : "to-slate-400/30"
+                  }`}
+                ></div>
+                <h3
+                  className={`text-[10px] font-bold uppercase tracking-[0.2em] px-2 ${
+                    isDark ? "text-white/50" : "text-slate-400"
+                  }`}
+                >
+                  {visibleSubCategory.title === "Default"
+                    ? visibleCategory?.title
+                    : visibleSubCategory.title}
+                </h3>
+                <div
+                  className={`h-[1px] flex-1 bg-gradient-to-l from-transparent ${
+                    isDark ? "to-white/20" : "to-slate-400/30"
+                  }`}
+                ></div>
+              </div>
+
+              <div
+                key={visibleSubCategory.id}
+                className="grid gap-3 sm:gap-4 w-full responsive-grid"
+              >
+                {visibleSubCategory.items.map((link, index) => {
+                  // Fallback icon logic: Use provided icon, or try to get favicon from URL
+                  const iconSource = link.icon || getFaviconUrl(link.url, faviconApi);
+
+                  return (
+                    <GlassCard
+                      key={link.id}
+                      hoverEffect={true}
+                      opacity={cardOpacity}
+                      themeMode={themeMode}
+                      onClick={() => window.open(link.url, "_blank")}
+                      className="flex flex-col items-center justify-center text-center p-2 relative group animate-card-enter"
+                      style={{
+                        height: `${cardHeight}px`,
+                        animationFillMode: "backwards",
+                        // Initial animation state handle
+                      }}
+                      title={
+                        link.description
+                          ? `${link.description}\n${link.url}`
+                          : `${link.title}\n${link.url}`
+                      }
+                    >
+                      <div
+                        className={`mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.3)] flex items-center justify-center h-6 w-6 ${
+                          isDark ? "text-white/90" : "text-slate-700"
+                        }`}
+                      >
+                        <SmartIcon
+                          icon={iconSource}
+                          imgClassName="w-6 h-6 object-contain drop-shadow-md rounded-md"
+                          size={24}
+                        />
+                      </div>
+                      <span
+                        className={`text-[12px] font-medium truncate w-full px-1 transition-colors duration-300 ${
+                          isDark ? "text-white/80 group-hover:text-white" : "text-slate-800"
+                        }`}
+                      >
+                        {link.title}
+                      </span>
+                    </GlassCard>
+                  );
+                })}
+              </div>
+
+              {visibleSubCategory.items.length === 0 && (
+                <div
+                  className={`text-center py-16 flex flex-col items-center gap-3 ${
+                    isDark ? "text-white/20" : "text-slate-400"
+                  }`}
+                >
+                  <FolderOpen size={40} strokeWidth={1} />
+                  <p className="text-sm">{t("no_links")}</p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className={`text-center py-12 ${isDark ? "text-white/30" : "text-slate-400"}`}>
+              No sub-categories found. Click Settings to configure.
+            </div>
+          )}
+        </main>
+      </div>
+
+      <SyncIndicator />
+
+      <Suspense fallback={LoadingFallback}>
+        <ClockWidget themeMode={themeMode} onZenModeChange={setIsZenMode} />
+        <PoemWidget themeMode={themeMode} isZenMode={isZenMode} />
+        <AIAssistant themeMode={themeMode} />
+      </Suspense>
+
+      <Motto themeMode={themeMode} />
+
+      <Footer isDark={isDark} github={footerGithub} links={footerLinks} />
+
+      <Suspense fallback={LoadingFallback}>
+        <BottomNav
+          themeMode={themeMode}
+          activeTab={mobileTab}
+          onTabChange={setMobileTab}
+          onOpenSettings={() => setIsModalOpen(true)}
+          isZenMode={isZenMode}
+        />
+      </Suspense>
+
+      <LinkManagerModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        categories={categories}
+        setCategories={actions.setCategories}
+        background={background}
+        prefs={{
+          cardOpacity,
+          themeColor,
+          themeMode,
+          themeColorAuto,
+          maxContainerWidth,
+          cardWidth,
+          cardHeight,
+          gridColumns,
+          siteTitle,
+          faviconApi,
+          footerGithub,
+          footerLinks,
+        }}
+        onUpdateAppearance={(
+          url: string,
+          opacity: number,
+          color?: string,
+          layout?: any,
+          themeAuto?: boolean,
+          extra?: any
+        ) => actions.handleUpdateAppearance(url, opacity, color, layout, themeAuto, extra)}
+        isDefaultCode={isDefaultCode}
+      />
+    </div>
+  );
+};
+
+export default App;
